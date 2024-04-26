@@ -24,7 +24,7 @@ with open(fasta_file, "r") as f:
     
 # Generate the output PDB file name using the input FASTA file name
 output_file = os.path.splitext(os.path.basename(fasta_file))[0] + ".pdb"
-
+output_num = os.path.join("PTM_Results", os.path.splitext(os.path.basename(fasta_file))[0] + ".txt")
 
 print("Building model...")
 model = esm.pretrained.esmfold_v1()
@@ -44,6 +44,16 @@ with open(output_file, "w") as f:
 
 import biotite.structure.io as bsio
 struct = bsio.load_structure(output_file, extra_fields=["b_factor"])
+# Calculate the mean of b_factor
+mean_b_factor = struct.b_factor.mean()
+if mean_b_factor is not None:
+    print("B_factor results", mean_b_factor)
+    try:
+        with open(output_num, 'w') as f:
+            f.write(str(mean_b_factor))
+    except Exception as e:
+        print("An error occurred while writing the mean B-factor to the file:", e)
+
 print(struct.b_factor.mean())  # this will be the pLDDT
 # 88.3
 

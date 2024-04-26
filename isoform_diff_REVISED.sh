@@ -93,8 +93,6 @@ if [ $? -eq 0 ]; then
 			mv "$file" "$directory/UBI_${file_id}.txt"
 		fi
 	done
-	echo "Aggregating PTM results..."
-	python3 results_agg.py
 
 	echo ""
 	echo "Post-Translational Modifications retrieved!"
@@ -105,6 +103,10 @@ if [ $? -eq 0 ]; then
 		python esm_nstart.py "$file.fasta"
 	done
 	echo "ESMFold predictions completed!" 
+	
+	echo "Aggregating PTM results..."
+	python3 results_agg.py
+	echo "Script complete!"
 else
     echo "Error: echino_setup.sh script failed to complete."
 fi
