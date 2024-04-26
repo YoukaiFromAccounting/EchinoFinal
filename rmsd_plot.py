@@ -83,4 +83,4 @@ plt.title(file1label_final+' vs '+file2label_final +' RMSD Comparison')
 plt.legend()  # Show legend
 
 # Save plot as PNG
-plt.savefig('RMSD_residue_plot_'+file1label1+'_'+file2label1+'.png')
+plt.savefig('PTM_Results/RMSD_residue_plot_'+file1label1+'_'+file2label1+'.png')
