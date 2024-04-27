@@ -1,35 +1,41 @@
 #!/bin/bash
 
-#Run echino_setup.sh script
+#Run echino_setup.sh script, check for dependencies
 echo "Running echino_setup.sh script..."
 ./echino_setup.sh
 
 #### Read in the URLS and run wget requests from here
 #### Save the protein names in an array to access later when calling glycan detection etc. 
 
-# Input file containing URLs
-input_file="isoforms.txt"
-# Store all isoforms in array file names to be accessed for subsiquent use
+#Check if the input file argument is properly provided
+if [ $# -ne 1 ]; then
+    echo "Usage: $0 <input_file>"
+    exit 1
+fi
+
+#Input file containing URLs
+input_file="$1"
+#Store all isoforms in array file names to be accessed for subsiquent use
 file_names=()
 
-# Check if the input file exists
+#Check if the input file exists
 if [ ! -f "$input_file" ]; then
     echo "Input file not found!"
     exit 1
 fi
 
-# Read each line from the file and extract the value after the last equal sign to represent protein name
+#Read each line from the file and extract the value after the last equal sign to represent protein name
 while IFS= read -r name; do
-    # Extract the name of the protein from the URL
+    #Extract the name of the protein from the URL
     name="$name"
     URL="https://www.ncbi.nlm.nih.gov/sviewer/viewer.fcgi?tool=portal&sendto=on&log$=seqview&db=protein&dopt=fasta&sort=&val="
     file_names+=("$name")
-    # run wget request from the url and name the fasta file the protein name extracted from the URL
+    #run wget request from the url and name the fasta file the protein name extracted from the URL
     wget -O "$name".fasta "$URL$name"
     echo "Downloading fasta file "$name""
 done < "$input_file"
 
-### Revise the rest below to instead to loop through array of isoform names and run glycan detection that way
+###Loop through files and perform glycan detection and ubiquitination detection
 echo "FILE NAMES: ${file_names[@]}"
  
 #Check if echino_setup.sh script was successful
@@ -38,14 +44,15 @@ if [ $? -eq 0 ]; then
 
 	cd glycan_detection || exit
 
-	# loop through file names and run glycan detection on each fasta file
+	#loop through file names and run glycan detection on each fasta file
 	for file in "${file_names[@]}"; do
 		#DEBUG
 		python3 glycan.py -in ../"$file".fasta -out "" -gap 0
 		echo "GLYCAN PREDICTION COMPLETED ON" "$file"
 	done
 
-	# Loop through file names and run ubiquitination site detection, save results to file for each fasta file
+	#Loop through file names and run ubiquitination site detection, save results to file for each fasta file
+	#Build SVM model for UbiSite prediction
 	cd ..
 	echo "Building AAIndex..."
 	cd ESA-UbiSite
@@ -59,7 +66,8 @@ if [ $? -eq 0 ]; then
 	cd ..
 	cd ..
 	
-	echo "Starting ubiquitination prediciton"
+	#Run ubiquitination site prediction
+	echo "Starting ubiquitination prediction"
 	for file in "${file_names[@]}"; do
 		mkdir "$file"_output
 		perl ESAUbiSite_main.pl ../"$file".fasta "$file"_output
@@ -67,17 +75,17 @@ if [ $? -eq 0 ]; then
 	done
 	
 	echo "Moving results files..."
-	# Create the PTM_Results directory if it doesn't exist
+	#Create the PTM_Results directory if it doesn't exist
 	cd ..
 	mkdir -p PTM_Results
 	
-	# Move the output files from glycan_detection directory to PTM_Results directory
+	#Move the output files from glycan_detection directory to PTM_Results directory
 	mv glycan_detection/*_glycans_pos.out PTM_Results/
 	
-	# Move the fasta_ubicolor files from ESA-UbiSite directories to PTM_Results directory
+	#Move the fasta_ubicolor files from ESA-UbiSite directories to PTM_Results directory
 	mv ESA-UbiSite/*/*.fasta_ubicolor PTM_Results/
 	
-	# Rename files
+	#Rename files prior to processing
 	echo "Parsing files..."
 	directory="PTM_Results"
 	for file in "$directory"/*_glycans_pos.out; do
@@ -104,12 +112,15 @@ if [ $? -eq 0 ]; then
 	done
 	echo "ESMFold predictions completed!" 
 	
+	#Create RMSD visualizations
+	mkdir Prody_Results
 	#Run RMSD Generator	
-	./rmsd_generator.sh
+	./rmsd_generator.sh $1
 
+	#Combine all numerical results into results folder
 	echo "Aggregating PTM results..."
 	python3 results_agg.py
-	echo "Script complete!"
+	echo "Script complete! Results available in PTM_results_summary.txt"
 else
     echo "Error: echino_setup.sh script failed to complete."
 fi

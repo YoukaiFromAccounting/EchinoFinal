@@ -4,16 +4,16 @@ import numpy as np
 import matplotlib.pyplot as plt
 import sys
 
-# Accept file names as args
+#Accept file names as args
 file1 = sys.argv[1]
 file2 = sys.argv[2]
 
-# Parse PDB files and align sequences
+#Parse PDB files and align sequences
 iso1 = parsePDB(file1)
 iso2 = parsePDB(file2)
 matches = matchChains(iso1, iso2)
 
-# Isolate matched sequenced 
+#Isolate matched sequenced 
 iso1_match = matches[0][0] 
 iso2_match = matches[0][1] 
 
@@ -58,7 +58,7 @@ def read_structure(filename):
 iso_1_structure = read_structure('new_isoform1.pdb')
 iso_2_structure = read_structure('new_isoform2.pdb')
 
-# Calculate RMSDs
+#Calculate RMSDs
 total_rmsd, residue_rmsds = calculate_rmsd(iso_1_structure, iso_2_structure)
 
 indices = []
@@ -67,20 +67,20 @@ for i, rmsd in enumerate(residue_rmsds, 1):
     indices.append(i)
     RMSD_vals.append(rmsd)
 
-# Plotting
+#Plotting
 plt.plot(indices, RMSD_vals)
 
-# Extract file names for plot label 
+#Extract file names for plot label 
 file1label1 = str(file1)
 file1label_final = file1label1[:-4]
 file2label1 = str(file2)
 file2label_final = file2label1[:-4]
 
-# Adding labels and title
+#Adding labels and title
 plt.xlabel('Index')
 plt.ylabel('RMSD')
 plt.title(file1label_final+' vs '+file2label_final +' RMSD Comparison')
-plt.legend()  # Show legend
+plt.legend()  
 
-# Save plot as PNG
-plt.savefig('PTM_Results/RMSD_residue_plot_'+file1label1+'_'+file2label1+'.png')
+#Save plot as PNG
+plt.savefig('Prody_Results/RMSD_residue_plot_'+file1label1+'_'+file2label1+'.png')
